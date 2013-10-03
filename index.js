@@ -13,6 +13,9 @@ var write_init =
   })
   .then(function (ch) {
     write_chan = ch;
+    // NB: Not worried about the dependency of later reqs on prev ones here, as
+    // AMQP serialises requests on the channel.
+    // cf https://npmjs.org/package/amqplib
     return Q.all([
       ch.assertQueue('foo'),
       ch.assertExchange('bar'),
