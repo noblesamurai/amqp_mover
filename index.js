@@ -12,6 +12,7 @@ var amqp_write_route_key = process.env.AMQP_WRITE_ROUTE_KEY;
 var amqp_write_queue = process.env.AMQP_WRITE_QUEUE;
 
 var write_chan;
+var read_chan;
 var write_init =
   Q(amqp.connect(amqp_write_url))
   .then(function (conn) {
@@ -45,7 +46,7 @@ var read_init =
     return conn.createChannel();
   })
   .then(function (ch) {
-    chan = ch;
+    read_chan = ch;
     return Q.all([
       ch.assertQueue(amqp_read_queue),
       // WARNING: noAck true can be risky, but for this to move and not copy,
