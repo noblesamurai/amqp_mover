@@ -16,7 +16,8 @@ var write_init =
   Q(amqp.connect(amqp_write_url))
   .then(function(conn) {
     console.log('write connection up');
-    return conn.createChannel();
+    // Use a confirm channel so we can be sure the publish succeeded.
+    return conn.createConfirmChannel();
   })
   .then(function(ch) {
     write_chan = ch;
@@ -33,8 +34,14 @@ var write_init =
 function handleMessage(message) {
   write_init.then(function() {
     console.log('writing message:');
-    console.log(message);
-    write_chan.publish(amqp_write_exchange, amqp_write_route_key, message.content);
+    console.log(message.content.toString());
+    // Because we are using a confirm channel, we wait until we received
+    // confirmation of a successful publish before we ack to the source channel.
+    // This is safer.
+    write_chan.publish(amqp_write_exchange,
+        amqp_write_route_key, message.content).then(function() {
+      read_chan.ack(message);
+    });
   });
 }
 
