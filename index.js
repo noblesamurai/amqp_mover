@@ -1,8 +1,15 @@
 var amqp = require('amqplib'),
-    Q = require('q').
+    Q = require('q');
 
 var amqp_read_url = process.env.AMQP_READ_URL;
+var amqp_read_exchange = process.env.AMQP_READ_EXCHANGE;
+var amqp_read_route_key = process.env.AMQP_READ_ROUTE_KEY;
+var amqp_read_queue = process.env.AMQP_READ_QUEUE;
+
 var amqp_write_url = process.env.AMQP_WRITE_URL;
+var amqp_write_exchange = process.env.AMQP_WRITE_EXCHANGE;
+var amqp_write_route_key = process.env.AMQP_WRITE_ROUTE_KEY;
+var amqp_write_queue = process.env.AMQP_WRITE_QUEUE;
 
 var write_chan;
 var write_init =
@@ -17,9 +24,9 @@ var write_init =
     // AMQP serialises requests on the channel.
     // cf https://npmjs.org/package/amqplib
     return Q.all([
-      ch.assertQueue('foo'),
-      ch.assertExchange('bar'),
-      ch.bindQueue('foo', 'bar', 'baz')
+      ch.assertQueue(amqp_write_queue),
+      ch.assertExchange(amqp_write_exchange),
+      ch.bindQueue(amqp_write_queue, amqp_write_exchange, amqp_write_route_key)
     ]);
   });
 
@@ -27,7 +34,7 @@ function handleMessage(message) {
   write_init.then(function() {
     console.log('writing message:');
     console.log(message);
-    write_chan.publish('bar', 'baz', message.content);
+    write_chan.publish(amqp_write_exchange, amqp_write_route_key, message.content);
   });
 }
 
@@ -40,9 +47,10 @@ var read_init =
   .then(function (ch) {
     chan = ch;
     return Q.all([
-      ch.assertQueue('foo'),
-      ch.assertExchange('bar'),
-      ch.bindQueue('foo', 'bar', 'baz'),
-      ch.consume('foo', handleMessage, {noAck: true})
+      ch.assertQueue(amqp_read_queue),
+      ch.assertExchange(amqp_read_exchange),
+      ch.bindQueue(amqp_read_queue, amqp_read_exchange, amqp_read_route_key),
+      // WARNING: noAck true can be risky.
+      ch.consume(amqp_read_queue, handleMessage, {noAck: true})
     ]);
   });
