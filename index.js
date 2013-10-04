@@ -48,9 +48,8 @@ var read_init =
     chan = ch;
     return Q.all([
       ch.assertQueue(amqp_read_queue),
-      ch.assertExchange(amqp_read_exchange),
-      ch.bindQueue(amqp_read_queue, amqp_read_exchange, amqp_read_route_key),
-      // WARNING: noAck true can be risky.
-      ch.consume(amqp_read_queue, handleMessage, {noAck: true})
+      // WARNING: noAck true can be risky, but for this to move and not copy,
+      // you need to set it.
+      ch.consume(amqp_read_queue, handleMessage, {noAck: false})
     ]);
   });
